@@ -1,0 +1,16 @@
+[package]
+name = "parley-test"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+parley = { version = "0.2.0", default-features = false, features = [
+    "libm",
+    "std",
+] }
+skrifa = { version = "0.22.3" }
+peniko = { version = "0.2.0" }
+swash = { version = "0.1.19", default-features = true }
+image = "0.25.2"
+imageproc = "0.25.0"
+taffy = "0.5.2"
