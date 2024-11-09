@@ -419,7 +419,7 @@ dependencies = [
  "objc2-foundation",
  "peniko",
  "roxmltree",
- "skrifa",
+ "skrifa 0.22.3",
  "smallvec",
  "windows",
  "windows-core",
@@ -926,7 +926,7 @@ checksum = "3a67bad26b7aca3f1046305d0d7edba9a77b14e74a9ff9136968178c8e6c8e61"
 dependencies = [
  "fontique",
  "peniko",
- "skrifa",
+ "skrifa 0.22.3",
  "swash",
 ]
 
@@ -938,7 +938,7 @@ dependencies = [
  "imageproc",
  "parley",
  "peniko",
- "skrifa",
+ "skrifa 0.24.1",
  "swash",
  "taffy",
 ]
@@ -1167,6 +1167,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "read-fonts"
+version = "0.23.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7a252609f83421102bf1b7f08936f5a24e4f9568256e2015fbd027790caf3dcb"
+dependencies = [
+ "bytemuck",
+ "font-types",
+]
+
+[[package]]
 name = "rgb"
 version = "0.8.50"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1258,7 +1268,17 @@ checksum = "8e1c44ad1f6c5bdd4eefed8326711b7dbda9ea45dfd36068c427d332aa382cbe"
 dependencies = [
  "bytemuck",
  "core_maths",
- "read-fonts",
+ "read-fonts 0.22.5",
+]
+
+[[package]]
+name = "skrifa"
+version = "0.24.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "69a99d1c6428e12bcf538d34fd4b78a4e6a4556db29f319a1cecfc33f466e64c"
+dependencies = [
+ "bytemuck",
+ "read-fonts 0.23.2",
 ]
 
 [[package]]
@@ -1282,7 +1302,7 @@ version = "0.1.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cbd59f3f359ddd2c95af4758c18270eddd9c730dde98598023cdabff472c2ca2"
 dependencies = [
- "skrifa",
+ "skrifa 0.22.3",
  "yazi",
  "zeno",
 ]

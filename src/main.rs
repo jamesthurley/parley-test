@@ -16,8 +16,9 @@ use taffy::{
     TaffyTree,
 };
 
-const TEXT : &str = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
-//const TEXT : &str = "The quick brown dog jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog.";
+//const TEXT : &str = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
+const TEXT : &str = "The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog.";
+//const TEXT : &str = "The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog.";
 
 const OPEN_SANS_TTF: &[u8] = include_bytes!("../fonts/OpenSansVariable.ttf");
 const OPEN_SANS_ITALIC_TTF: &[u8] = include_bytes!("../fonts/OpenSansItalicVariable.ttf");
@@ -25,7 +26,7 @@ const OPEN_SANS_ITALIC_TTF: &[u8] = include_bytes!("../fonts/OpenSansItalicVaria
 const LINE_HEIGHT: f32 = 1.3;
 
 fn main() -> Result<(), taffy::TaffyError> {
-    let width = 400;
+    let width = 500;
     let height = 300;
 
     let mut taffy: TaffyTree<NodeContext> = TaffyTree::new();
