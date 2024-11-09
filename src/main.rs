@@ -182,6 +182,7 @@ impl TextBlockNodeContext {
         let width = layout.width();
         let height = layout.height();
 
+        println!("Width constraint is: {:?}", width_constraint);
         println!("Measured text block: width: {}, height: {}", width, height);
 
         Size { width, height }
