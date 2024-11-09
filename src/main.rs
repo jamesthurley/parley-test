@@ -16,8 +16,8 @@ use taffy::{
     TaffyTree,
 };
 
-//const TEXT : &str = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
-const TEXT : &str = "The quick brown dog jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog.";
+const TEXT : &str = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
+//const TEXT : &str = "The quick brown dog jumped over the lazy dog. The quick brown fox jumped over the lazy dog. The quick brown fox jumped over the lazy dog.";
 
 const OPEN_SANS_TTF: &[u8] = include_bytes!("../fonts/OpenSansVariable.ttf");
 const OPEN_SANS_ITALIC_TTF: &[u8] = include_bytes!("../fonts/OpenSansItalicVariable.ttf");
@@ -61,6 +61,7 @@ fn main() -> Result<(), taffy::TaffyError> {
     let mut swash_scale_context = swash::scale::ScaleContext::new();
     let mut parley_layout_context = parley::LayoutContext::new();
     let mut parley_font_context = parley::FontContext::new();
+
     parley_font_context
         .collection
         .register_fonts(OPEN_SANS_TTF.into());
