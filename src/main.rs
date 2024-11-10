@@ -1,3 +1,5 @@
+use std::cell::RefCell;
+
 use image::{Pixel, Rgba, RgbaImage};
 use imageproc::{
     drawing::{draw_filled_rect_mut, draw_hollow_rect_mut},
@@ -12,7 +14,7 @@ use swash::{
     FontRef,
 };
 use taffy::{
-    prelude::length, AvailableSpace, Dimension, Display, FlexDirection, NodeId, Size, Style,
+    prelude::length, AvailableSpace, Dimension, Display, FlexDirection, NodeId, Point, Size, Style,
     TaffyTree,
 };
 
@@ -86,6 +88,7 @@ fn main() -> Result<(), taffy::TaffyError> {
                 node_context,
                 &mut parley_font_context,
                 &mut parley_layout_context,
+                &mut swash_scale_context,
             )
         },
     )?;
@@ -160,6 +163,7 @@ fn main() -> Result<(), taffy::TaffyError> {
 
 pub(crate) struct TextBlockNodeContext {
     pub text: String,
+    pub offset: RefCell<Point<i32>>,
 }
 
 impl TextBlockNodeContext {
@@ -169,6 +173,7 @@ impl TextBlockNodeContext {
         available_space: taffy::geometry::Size<taffy::style::AvailableSpace>,
         font_context: &mut parley::FontContext,
         layout_context: &mut parley::LayoutContext,
+        scale_context: &mut swash::scale::ScaleContext,
     ) -> Size<f32> {
         let width_constraint = known_dimensions.width.or(match available_space.width {
             AvailableSpace::MinContent => Some(0.0),
@@ -183,9 +188,65 @@ impl TextBlockNodeContext {
         let height = layout.height();
 
         println!("Width constraint is: {:?}", width_constraint);
-        println!("Measured text block: width: {}, height: {}", width, height);
+        println!("Parley's measured text size: {}x{}", width, height);
 
-        Size { width, height }
+        // Compute our own pixel bounds.
+        let mut bounds: Option<taffy::Rect<i32>> = None;
+
+        let mut apply_pixel = |x: i32, y: i32, _pixel: &Rgba<u8>| match bounds.as_mut() {
+            None => {
+                bounds = Some(taffy::Rect::<i32> {
+                    top: y,
+                    left: x,
+                    right: x,
+                    bottom: y,
+                });
+            }
+            Some(bounds) => {
+                if x < bounds.left {
+                    bounds.left = x;
+                }
+                if x > bounds.right {
+                    bounds.right = x;
+                }
+                if y < bounds.top {
+                    bounds.top = y;
+                }
+                if y > bounds.bottom {
+                    bounds.bottom = y;
+                }
+            }
+        };
+
+        render_layout(&mut apply_pixel, layout, scale_context);
+
+        println!("Manually measured bounds: {:?}", bounds);
+
+        let offset = match bounds {
+            None => Point { x: 0, y: 0 },
+            Some(bounds) => Point {
+                x: bounds.left,
+                y: bounds.top,
+            },
+        };
+
+        let result = match bounds {
+            None => Default::default(),
+            Some(bounds) => Size {
+                width: (bounds.right - bounds.left + 1) as f32,
+                height: (bounds.bottom - bounds.top + 1) as f32,
+            },
+        };
+
+        println!(
+            "Manually measured text size: {}x{}",
+            result.width, result.height
+        );
+        println!("Manually measured text offset: {}x{}", offset.x, offset.y);
+
+        *self.offset.borrow_mut() = offset;
+
+        result
     }
 }
 
@@ -198,27 +259,30 @@ fn draw_override(
     scale_context: &mut swash::scale::ScaleContext,
 ) {
     let node_layout = tree.layout(node_id).unwrap();
+    let context = tree.get_node_context(node_id).unwrap();
+    let NodeContext::Text(context) = context;
+
+    let offset = context.offset.borrow();
+
+    let x_offset = node_layout.location.x - offset.x as f32;
+    let y_offset = node_layout.location.y - offset.y as f32;
 
     let width_constraint = Some(node_layout.size.width);
     let text = TEXT;
 
     let layout = prepare_layout(layout_context, font_context, text, width_constraint);
 
-    // Iterate over laid out lines
-    for line in layout.lines() {
-        // Iterate over GlyphRun's within each line
-        for item in line.items() {
-            if let PositionedLayoutItem::GlyphRun(glyph_run) = item {
-                render_glyph_run(
-                    scale_context,
-                    &glyph_run,
-                    image,
-                    node_layout.location.x,
-                    node_layout.location.y,
-                );
-            }
-        }
-    }
+    let mut apply_pixel = |x: i32, y: i32, pixel: &Rgba<u8>| {
+        let Ok(x) = u32::try_from(x + x_offset as i32) else {
+            return;
+        };
+        let Ok(y) = u32::try_from(y + y_offset as i32) else {
+            return;
+        };
+        image.get_pixel_mut(x, y).blend(pixel);
+    };
+
+    render_layout(&mut apply_pixel, layout, scale_context);
 }
 
 fn prepare_layout(
@@ -248,16 +312,30 @@ fn prepare_layout(
     layout
 }
 
+fn render_layout(
+    apply_pixel: &mut impl FnMut(i32, i32, &Rgba<u8>),
+    layout: parley::Layout<[u8; 4]>,
+    scale_context: &mut swash::scale::ScaleContext,
+) {
+    // Iterate over laid out lines
+    for line in layout.lines() {
+        // Iterate over GlyphRun's within each line
+        for item in line.items() {
+            if let PositionedLayoutItem::GlyphRun(glyph_run) = item {
+                render_glyph_run(apply_pixel, scale_context, &glyph_run);
+            }
+        }
+    }
+}
+
 fn render_glyph_run(
+    apply_pixel: &mut impl FnMut(i32, i32, &Rgba<u8>),
     context: &mut ScaleContext,
     glyph_run: &GlyphRun<[u8; 4]>,
-    image: &mut RgbaImage,
-    x: f32,
-    y: f32,
 ) {
     // Resolve properties of the GlyphRun
-    let mut run_x = glyph_run.offset() + x;
-    let run_y = glyph_run.baseline() + y;
+    let mut run_x = glyph_run.offset();
+    let run_y = glyph_run.baseline();
     let style = glyph_run.style();
     let color = style.brush;
 
@@ -287,12 +365,12 @@ fn render_glyph_run(
         let glyph_y = run_y - glyph.y;
         run_x += glyph.advance;
 
-        render_glyph(image, &mut scaler, color, glyph, glyph_x, glyph_y);
+        render_glyph(apply_pixel, &mut scaler, color, glyph, glyph_x, glyph_y);
     }
 }
 
 fn render_glyph(
-    image: &mut RgbaImage,
+    apply_pixel: &mut impl FnMut(i32, i32, &Rgba<u8>),
     scaler: &mut Scaler,
     color: [u8; 4],
     glyph: Glyph,
@@ -322,23 +400,19 @@ fn render_glyph(
 
     let glyph_width = rendered_glyph.placement.width;
     let glyph_height = rendered_glyph.placement.height;
-    let Ok(glyph_x) = u32::try_from(glyph_x.floor() as i32 + rendered_glyph.placement.left) else {
-        return;
-    };
-    let Ok(glyph_y) = u32::try_from(glyph_y.floor() as i32 - rendered_glyph.placement.top) else {
-        return;
-    };
+    let glyph_x = glyph_x.floor() as i32 + rendered_glyph.placement.left;
+    let glyph_y = glyph_y.floor() as i32 - rendered_glyph.placement.top;
 
     match rendered_glyph.content {
         Content::Mask => {
             let mut i = 0;
             for pixel_y in 0..glyph_height {
                 for pixel_x in 0..glyph_width {
-                    let x = glyph_x + pixel_x;
-                    let y = glyph_y + pixel_y;
+                    let x = glyph_x + pixel_x as i32;
+                    let y = glyph_y + pixel_y as i32;
                     let alpha = rendered_glyph.data[i];
                     let color = Rgba([color[0], color[1], color[2], alpha]);
-                    image.get_pixel_mut(x, y).blend(&color);
+                    apply_pixel(x, y, &color);
                     i += 1;
                 }
             }
@@ -348,10 +422,10 @@ fn render_glyph(
             let row_size = glyph_width as usize * 4;
             for (pixel_y, row) in rendered_glyph.data.chunks_exact(row_size).enumerate() {
                 for (pixel_x, pixel) in row.chunks_exact(4).enumerate() {
-                    let x = glyph_x + pixel_x as u32;
-                    let y = glyph_y + pixel_y as u32;
+                    let x = glyph_x + pixel_x as i32;
+                    let y = glyph_y + pixel_y as i32;
                     let color = Rgba(pixel.try_into().expect("Not RGBA"));
-                    image.get_pixel_mut(x, y).blend(&color);
+                    apply_pixel(x, y, &color);
                 }
             }
         }
@@ -367,6 +441,7 @@ impl NodeContext {
     fn text(text: &str) -> Self {
         NodeContext::Text(TextBlockNodeContext {
             text: text.to_string(),
+            offset: RefCell::new(Default::default()),
         })
     }
 }
@@ -377,6 +452,7 @@ fn measure_function(
     node_context: Option<&mut NodeContext>,
     font_context: &mut parley::FontContext,
     layout_context: &mut parley::LayoutContext,
+    scale_context: &mut swash::scale::ScaleContext,
 ) -> Size<f32> {
     if let Size {
         width: Some(width),
@@ -393,6 +469,7 @@ fn measure_function(
             available_space,
             font_context,
             layout_context,
+            scale_context,
         ),
     }
 }
