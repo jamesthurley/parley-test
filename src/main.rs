@@ -22,6 +22,10 @@ const TEXT : &str = "The quick brown fox jumped over the lazy dog. The quick bro
 
 const OPEN_SANS_TTF: &[u8] = include_bytes!("../fonts/OpenSansVariable.ttf");
 const OPEN_SANS_ITALIC_TTF: &[u8] = include_bytes!("../fonts/OpenSansItalicVariable.ttf");
+const ROBOTO_TTF: &[u8] = include_bytes!("../fonts/Roboto.ttf");
+const ROBOTO_MONO_TTF: &[u8] = include_bytes!("../fonts/RobotoMono.ttf");
+
+const FONT_FAMILY: &str = "Open Sans"; // "Roboto";
 
 const LINE_HEIGHT: f32 = 1.3;
 
@@ -69,6 +73,13 @@ fn main() -> Result<(), taffy::TaffyError> {
     parley_font_context
         .collection
         .register_fonts(OPEN_SANS_ITALIC_TTF.into());
+
+    parley_font_context
+        .collection
+        .register_fonts(ROBOTO_TTF.into());
+    parley_font_context
+        .collection
+        .register_fonts(ROBOTO_MONO_TTF.into());
 
     // Compute layout and print result
     taffy.compute_layout_with_measure(
@@ -230,7 +241,7 @@ fn prepare_layout(
     const DISPLAY_SCALE: f32 = 1.0;
     let mut builder = layout_context.ranged_builder(font_context, text, DISPLAY_SCALE);
 
-    builder.push_default(FontFamily::Named("Open Sans".into()));
+    builder.push_default(FontFamily::Named(FONT_FAMILY.into()));
 
     // Set default styles that apply to the entire layout
     builder.push_default(StyleProperty::LineHeight(LINE_HEIGHT));
